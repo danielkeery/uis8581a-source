@@ -62,6 +62,7 @@ jobs:
           sed -i 's/HOSTLDLIBS_dtc/HOSTLOADLIBES_dtc/' scripts/dtc/Makefile
           grep -q 'WCN_BOUND_XO_MODE' drivers/misc/sprdwcn/include/umw2653_glb.h && \
             printf '#define WCN_BOUND_XO_MODE\tBIT(15)\n' >> drivers/misc/sprdwcn/include/umw2653_glb.h || true
+          mkdir -p include/generated
           echo '#define vdso_offset_sigtramp 0x0648' > include/generated/vdso-offsets.h
 
       - name: Configure
