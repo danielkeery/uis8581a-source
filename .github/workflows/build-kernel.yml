@@ -4,11 +4,6 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      clean:
-        description: 'make clean first'
-        type: boolean
-        default: false
 
 concurrency:
   group: ${{ github.workflow }}
@@ -24,122 +19,78 @@ env:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    timeout-minutes: 45
+    timeout-minutes: 30
 
     steps:
-      - name: Checkout patches + config
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install toolchain + ccache
+      - name: Install deps
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq make gcc-aarch64-linux-gnu \
             device-tree-compiler ccache libyaml-dev
+          test -f /usr/include/yaml.h || sudo apt-get install -y libyaml-dev
 
-      - name: Setup ccache
-        uses: hendrikmuhs/ccache-action@v1.2
+      - uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ runner.os }}-kernel-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-kernel-
+          key: ${{ runner.os }}-kernel
           max-size: 2G
 
-      - name: Clone linux-sprd (4.14.133)
-        run: |
-          git clone --depth 1 https://github.com/strongtz/linux-sprd source
-          echo "commit: $(cd source && git rev-parse HEAD)"
+      - name: Clone linux-sprd
+        run: git clone --depth 1 https://github.com/strongtz/linux-sprd source
 
       - name: Clone module sources
         run: |
-          mkdir -p source/drivers/unisoc_platform source/drivers/vendor
-          # WCN BT/FM
-          git clone --depth 1 https://github.com/kanadenadi/android_kernel_sprd_sc9832e /tmp/kanadenadi
-          cp -a /tmp/kanadenadi/drivers/misc/sprdwcn_bsp source/drivers/unisoc_platform/
-          # WLAN (marlin3_sipc)
-          git clone --depth 1 https://github.com/Yazz246/Aether_Kernel-A665L /tmp/aether
-          cp -a /tmp/aether/drivers/unisoc_platform/wlan source/drivers/unisoc_platform/
-          # Camera BSP
-          git clone --depth 1 https://github.com/Hadenix/android_kernel_zte_sc9863a /tmp/zte
-          cp -a /tmp/zte/drivers/misc/sprd_camera source/drivers/misc/
-          cp -a /tmp/zte/drivers/input/touchscreen/synaptics_dsx source/drivers/input/touchscreen/ 2>/dev/null || true
-          cp -a /tmp/aether/drivers/vendor/common/touchscreen_v2/hxchipset_v3_3 source/drivers/vendor/common/touchscreen_v2/ 2>/dev/null || true
-          # Vendor headers
-          mkdir -p source/drivers/misc/sprdwcn/platform
-          cp -a /tmp/aether/drivers/unisoc_platform/sprdwcn/sdio/sdiohal.h source/drivers/misc/sprdwcn/platform/ 2>/dev/null || true
-          cp -a /tmp/aether/drivers/unisoc_platform/sprdwcn/include/*.h source/drivers/misc/sprdwcn/include/ 2>/dev/null || true
-          cp -a /tmp/aether/drivers/unisoc_platform/sprdwcn/include/sprd_wcn.h source/drivers/misc/sprdwcn/platform/ 2>/dev/null || true
+          git clone --depth 1 https://github.com/kanadenadi/android_kernel_sprd_sc9832e /tmp/k
+          git clone --depth 1 https://github.com/Yazz246/Aether_Kernel-A665L /tmp/a
+          git clone --depth 1 https://github.com/Hadenix/android_kernel_zte_sc9863a /tmp/z
+          cp -a /tmp/k/drivers/misc/sprdwcn_bsp source/drivers/unisoc_platform/
+          cp -a /tmp/a/drivers/unisoc_platform/wlan source/drivers/unisoc_platform/
+          cp -a /tmp/a/drivers/vendor/common/touchscreen_v2/hxchipset_v3_3 source/drivers/vendor/common/touchscreen_v2/
+          cp -a /tmp/z/drivers/misc/sprd_camera source/drivers/misc/
+          cp -a /tmp/a/drivers/unisoc_platform/sprdwcn/include/*.h source/drivers/misc/sprdwcn/include/
+          cp -a /tmp/a/drivers/unisoc_platform/sprdwcn/sdio/sdiohal.h source/drivers/misc/sprdwcn/platform/
+          cp -a /tmp/a/drivers/unisoc_platform/sprdwcn/include/sprd_wcn.h source/drivers/misc/sprdwcn/platform/
 
-      - name: Apply patches
+      - name: Patch
         run: |
           cd source
-          # dtc -fcommon (GCC 16 compat)
-          sed -i 's|^HOST_EXTRACFLAGS := -I\$(src)/libfdt|HOST_EXTRACFLAGS := -I$(src)/libfdt -fcommon|' scripts/dtc/Makefile
-          # vdso offset
+          sed -i '/^HOST_EXTRACFLAGS := /s/$/ -fcommon/' scripts/dtc/Makefile
           mkdir -p include/generated
-          printf '#define vdso_offset_sigtramp\t0x0648\n' > include/generated/vdso-offsets.h
-          # WCN_BOUND_XO_MODE for UMW2653
-          grep -q 'WCN_BOUND_XO_MODE' drivers/misc/sprdwcn/include/umw2653_glb.h 2>/dev/null && \
-            printf '#define WCN_BOUND_XO_MODE\tBIT(15)\n' >> drivers/misc/sprdwcn/include/umw2653_glb.h || true
+          echo '#define vdso_offset_sigtramp 0x0648' > include/generated/vdso-offsets.h
+          echo '#define WCN_BOUND_XO_MODE BIT(15)' >> drivers/misc/sprdwcn/include/umw2653_glb.h
 
       - name: Configure
         run: |
-          cp ${{ github.workspace }}/artifacts/running.config source/.config
+          cp artifacts/running.config source/.config
           make -C source ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" olddefconfig
 
-      - name: Build kernel Image + DTBs
-        run: |
-          make -C source -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" KCFLAGS="-Wno-error" Image dtbs
+      - name: Build
+        run: make -C source -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" Image dtbs
 
-      - name: Build out-of-tree modules
+      - name: Modules
         run: |
           cd source
-          TOTAL_FAIL=0
-          for entry in \
-            "drivers/unisoc_platform/wlan/marlin3_sipc" \
-            "drivers/unisoc_platform/sprdwcn_bsp/sipc_modules/bluetooth/driver BSP_BOARD_UNISOC_WCN_SOCKET=sipc" \
-            "drivers/unisoc_platform/sprdwcn_bsp/sipc_modules/fm/driver BSP_BOARD_UNISOC_WCN_SOCKET=sipc" \
-            "drivers/misc/sprd_camera/cpp/lite_r4p0" \
-            "drivers/misc/sprd_camera/flash"
+          for d in \
+            drivers/unisoc_platform/wlan/marlin3_sipc \
+            drivers/unisoc_platform/sprdwcn_bsp/sipc_modules/bluetooth/driver \
+            drivers/unisoc_platform/sprdwcn_bsp/sipc_modules/fm/driver \
+            drivers/misc/sprd_camera/cpp/lite_r4p0 \
+            drivers/misc/sprd_camera/flash
           do
-            dir="${entry%% *}"
-            extra="${entry#* }"
-            [ "$extra" = "$dir" ] && extra=""
-            if [ -d "$dir" ]; then
-              echo "=== Building $dir ==="
-              make -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" M="$dir" $extra modules && \
-                echo "OK: $dir" || { TOTAL_FAIL=$((TOTAL_FAIL+1)); echo "FAIL: $dir"; }
-            else
-              echo "SKIP: $dir not found"
-            fi
+            echo "=== $d ==="
+            E=""
+            case $d in *bluetooth*|*fm*) E="BSP_BOARD_UNISOC_WCN_SOCKET=sipc";; esac
+            make -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" M=$d $E modules
           done
-          exit $TOTAL_FAIL
 
-      - name: List results
-        run: |
-          echo "=== Kernel Image ==="
-          ls -lh source/arch/arm64/boot/Image
-          echo "=== Device Tree Blobs ==="
-          ls -lh source/arch/arm64/boot/dts/sprd/*.dtb | head -10
-          echo "=== Built Modules ==="
-          find source -name "*.ko" -type f -exec ls -lh {} \;
-
-      - name: Upload build artifacts
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: uis8581a-build
           path: |
             source/arch/arm64/boot/Image
             source/arch/arm64/boot/dts/sprd/*.dtb
-            source/arch/arm64/boot/dts/sprd/*.dtbo
-            source/vmlinux
             source/.config
-          retention-days: 90
-
-      - name: Upload built modules
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: uis8581a-modules
-          path: |
             source/drivers/**/*.ko
           retention-days: 90
