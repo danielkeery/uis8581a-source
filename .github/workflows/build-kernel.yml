@@ -73,7 +73,7 @@ jobs:
           make -C source ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" olddefconfig
 
       - name: Build
-        run: make -C source -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" Image dtbs
+        run: make -C source -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" KCFLAGS="-Wno-error -I$(pwd)/source/drivers/devfreq/sprd" Image dtbs
 
       - name: Modules
         run: |
