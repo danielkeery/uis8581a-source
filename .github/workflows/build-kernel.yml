@@ -64,6 +64,9 @@ jobs:
             printf '#define WCN_BOUND_XO_MODE\tBIT(15)\n' >> drivers/misc/sprdwcn/include/umw2653_glb.h || true
           mkdir -p include/generated
           echo '#define vdso_offset_sigtramp 0x0648' > include/generated/vdso-offsets.h
+          # Fix sprd_dfs_trace.h include path (relative to kernel root)
+          sed -i 's|../../drivers/devfreq/sprd|../../drivers/devfreq/sprd|' drivers/devfreq/sprd/sprd_dfs_trace.h
+
 
       - name: Configure
         run: |
