@@ -1,0 +1,8 @@
+--- a/scripts/dtc/Makefile
++++ b/scripts/dtc/Makefile
+@@ -7,7 +7,7 @@
+ dtc-objs	+= libfdt/fdt.o libfdt/fdt_ro.o libfdt/fdt_wip.o libfdt/fdt_sw.o \
+ 			libfdt/fdt_rw.o libfdt/fdt_strerror.o libfdt/fdt_empty_tree.o
+ # Source files need to get at the userspace version of libfdt_env.h to compile
+-HOST_EXTRACFLAGS := -I$(src)/libfdt
++HOST_EXTRACFLAGS := -I$(src)/libfdt -fcommon

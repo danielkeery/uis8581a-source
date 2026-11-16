@@ -1,0 +1,265 @@
+name: UIS8581A Kernel Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      build_modules:
+        description: 'Build out-of-tree modules'
+        required: false
+        default: 'true'
+        type: boolean
+
+env:
+  KERNEL_VERSION: 4.14.133
+  ARCH: arm64
+  CROSS_COMPILE: aarch64-linux-gnu-
+
+jobs:
+  # Main kernel build job
+  kernel:
+    name: Build Kernel
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    outputs:
+      kernel_version: ${{ steps.version.outputs.version }}
+      config_hash: ${{ steps.config.outputs.hash }}
+    steps:
+      - name: Checkout kernel source
+        uses: actions/checkout@v4
+        with:
+          repository: strongtz/linux-sprd
+          ref: d834a127a
+          path: linux-sprd
+      
+      - name: Checkout this repo (config, patches, scripts)
+        uses: actions/checkout@v4
+        path: uis8581a-source
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y             build-essential             gcc-aarch64-linux-gnu             libssl-dev             libelf-dev             bc             bison             flex             device-tree-compiler             cpio             kmod             git             wget             curl             python3             python3-pip
+      
+      - name: Setup kernel config
+        id: config
+        working-directory: linux-sprd
+        run: |
+          # Use running.config as base
+          cp ../uis8581a-source/running.config .config
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
+          # Save config hash
+          echo "hash=$(sha256sum .config | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+      
+      - name: Apply patches
+        working-directory: linux-sprd
+        run: |
+          for patch in ../uis8581a-source/patches/*.patch; do
+            if [ -f "$patch" ]; then
+              echo "Applying $patch"
+              git apply --verbose "$patch" || patch -p1 < "$patch"
+            fi
+          done
+      
+      - name: Build kernel (Image + dtbs)
+        id: build
+        working-directory: linux-sprd
+        run: |
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc) Image dtbs
+          echo "Image size: $(wc -c arch/arm64/boot/Image | awk '{print $1}') bytes"
+          ls -la arch/arm64/boot/Image
+          ls -la arch/arm64/boot/dts/sprd/
+      
+      - name: Extract kernel version
+        id: version
+        working-directory: linux-sprd
+        run: |
+          VERSION=$(make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- kernelversion)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Upload kernel artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-${{ steps.version.outputs.version }}
+          path: |
+            linux-sprd/arch/arm64/boot/Image
+            linux-sprd/arch/arm64/boot/dts/sprd/*.dtb
+            linux-sprd/.config
+          retention-days: 30
+
+  # Out-of-tree module build jobs (parallel)
+  modules:
+    name: Build Modules
+    needs: kernel
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: github.event.inputs.build_modules != 'false'
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - name: sprdwl_ng
+            source: aether/marlin3_sipc
+            path: drivers/unisoc_platform/wlan/marlin3_sipc
+          - name: sprd_fm
+            source: kanadenadi/fm_sdio
+            path: drivers/misc/sprdwcn/fm
+          - name: sprdbt_tty
+            source: kanadenadi/tty-sdio
+            path: drivers/misc/sprdwcn/bluetooth
+          - name: sprd_cpp
+            source: zte/lite_r4p0
+            path: drivers/misc/sprd_camera/cpp/lite_r4p0
+          - name: flash_ic_ocp8137
+            source: zte/flash
+            path: drivers/misc/sprd_camera/flash
+          - name: sprd_flash_drv
+            source: zte/flash
+            path: drivers/misc/sprd_camera/flash
+          - name: hxchipset
+            source: aether/hxchipset_v3_3
+            path: drivers/gpu/drm/hxchipset
+    steps:
+      - name: Checkout kernel source
+        uses: actions/checkout@v4
+        with:
+          repository: strongtz/linux-sprd
+          ref: d834a127a
+          path: linux-sprd
+      
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+        path: uis8581a-source
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential gcc-aarch64-linux-gnu libssl-dev libelf-dev bc bison flex device-tree-compiler cpio kmod git wget curl python3
+      
+      - name: Prepare kernel headers
+        working-directory: linux-sprd
+        run: |
+          cp ../uis8581a-source/running.config .config
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- olddefconfig
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc) prepare scripts
+      
+      - name: Fetch module source
+        id: fetch
+        run: |
+          # This would clone the specific module source repos
+          # For now, create placeholder showing structure
+          echo "Module: ${{ matrix.module.name }}"
+          echo "Source: ${{ matrix.module.source }}"
+          echo "Path: ${{ matrix.module.path }}"
+          mkdir -p module_source/${{ matrix.module.path }}
+          # TODO: Add actual source fetching logic per module
+      
+      - name: Build module
+        working-directory: linux-sprd
+        run: |
+          # Build the specific module
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- M=../module_source/${{ matrix.module.path }} modules
+      
+      - name: Upload module artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: module-${{ matrix.module.name }}
+          path: |
+            module_source/${{ matrix.module.path }}/*.ko
+          retention-days: 30
+
+  # Prebuilt modules stage (for modules with no public source)
+  prebuilt:
+    name: Package Prebuilt Modules
+    needs: kernel
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+        path: uis8581a-source
+      
+      - name: Create prebuilt modules package
+        run: |
+          mkdir -p prebuilt_modules
+          # These would be the socko modules - need to be added to repo or downloaded
+          echo "Prebuilt modules: pvrsrvkm, jadardTS_ts, sprd_camera, tcs3430, ltr_308als, ch7026, qn8027, lsec_audio, nxp685x_fm, microarray_fp, synaptics_dsx_td4310, sprd_sensor"
+          # For CI, we document which are prebuilt
+          cat > prebuilt_modules/MANIFEST.txt << 'EOF'
+          # Prebuilt modules (no public source available)
+          pvrsrvkm.ko          # PowerVR Rogue GPU - 24.5MB
+          jadardTS_ts.ko       # Jadard touchscreen - proprietary
+          sprd_camera.ko       # LSEC ISP2.6 camera - proprietary
+          tcs3430.ko           # AMS color sensor - no kernel driver
+          ltr_308als.ko        # Lite-On ALS - no kernel driver
+          ch7026.ko            # HDMI encoder - proprietary
+          qn8027.ko            # FM transmitter - proprietary
+          lsec_audio.ko        # LSEC audio DSP - proprietary
+          nxp685x_fm.ko        # NXP FM tuner - proprietary
+          microarray_fp.ko     # Fingerprint - proprietary
+          synaptics_dsx_td4310.ko  # Partial source (TD4310 variant)
+          sprd_sensor.ko       # Partial source
+          EOF
+      
+      - name: Upload prebuilt manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: prebuilt-modules-manifest
+          path: prebuilt_modules/MANIFEST.txt
+          retention-days: 30
+
+  # Release creation
+  release:
+    name: Create Release
+    needs: [kernel, modules, prebuilt]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download kernel artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: kernel-${{ needs.kernel.outputs.kernel_version }}
+          path: kernel
+      
+      - name: Download module artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: module-*
+          path: modules
+      
+      - name: Download prebuilt manifest
+        uses: actions/download-artifact@v4
+        with:
+          name: prebuilt-modules-manifest
+          path: prebuilt
+      
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: UIS8581A Kernel ${{ github.ref_name }}
+          body: |
+            ## Kernel Build
+            - Version: ${{ needs.kernel.outputs.kernel_version }}
+            - Config hash: ${{ needs.kernel.outputs.config_hash }}
+            - Architecture: arm64
+            - Toolchain: gcc-aarch64-linux-gnu
+            
+            ## Artifacts
+            - Image (kernel)
+            - DTBs (sprd/*.dtb)
+            - .config
+            - Out-of-tree modules (where source available)
+            - Prebuilt module manifest
+          files: |
+            kernel/Image
+            kernel/*.dtb
+            kernel/.config
+            modules/**/*.ko
+            prebuilt/MANIFEST.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
