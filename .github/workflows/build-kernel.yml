@@ -46,9 +46,11 @@ jobs:
           git clone --depth 1 https://github.com/Hadenix/android_kernel_zte_sc9863a /tmp/z
           cp -a /tmp/k/drivers/misc/sprdwcn_bsp source/drivers/unisoc_platform/
           cp -a /tmp/a/drivers/unisoc_platform/wlan source/drivers/unisoc_platform/
+          mkdir -p source/drivers/vendor/common/touchscreen_v2
           cp -a /tmp/a/drivers/vendor/common/touchscreen_v2/hxchipset_v3_3 source/drivers/vendor/common/touchscreen_v2/
           cp -a /tmp/z/drivers/misc/sprd_camera source/drivers/misc/
           cp -a /tmp/a/drivers/unisoc_platform/sprdwcn/include/*.h source/drivers/misc/sprdwcn/include/
+          mkdir -p source/drivers/misc/sprdwcn/platform
           cp -a /tmp/a/drivers/unisoc_platform/sprdwcn/sdio/sdiohal.h source/drivers/misc/sprdwcn/platform/
           cp -a /tmp/a/drivers/unisoc_platform/sprdwcn/include/sprd_wcn.h source/drivers/misc/sprdwcn/platform/
 
