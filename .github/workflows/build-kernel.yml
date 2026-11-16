@@ -58,6 +58,7 @@ jobs:
         run: |
           cd source
           sed -i '/^HOST_EXTRACFLAGS := /s/$/ -fcommon/' scripts/dtc/Makefile
+          sed -i 's/HOSTLDLIBS_dtc/HOSTLOADLIBES_dtc/' scripts/dtc/Makefile
           mkdir -p include/generated
           echo '#define vdso_offset_sigtramp 0x0648' > include/generated/vdso-offsets.h
           echo '#define WCN_BOUND_XO_MODE BIT(15)' >> drivers/misc/sprdwcn/include/umw2653_glb.h
