@@ -41,16 +41,16 @@ jobs:
 
       - name: Clone module sources
         run: |
+          mkdir -p source/drivers/vendor/common/touchscreen_v2
+          mkdir -p source/drivers/misc/sprdwcn/platform
           git clone --depth 1 https://github.com/kanadenadi/android_kernel_sprd_sc9832e /tmp/k
           git clone --depth 1 https://github.com/Yazz246/Aether_Kernel-A665L /tmp/a
           git clone --depth 1 https://github.com/Hadenix/android_kernel_zte_sc9863a /tmp/z
           cp -a /tmp/k/drivers/misc/sprdwcn_bsp source/drivers/unisoc_platform/
           cp -a /tmp/a/drivers/unisoc_platform/wlan source/drivers/unisoc_platform/
-          mkdir -p source/drivers/vendor/common/touchscreen_v2
           cp -a /tmp/a/drivers/vendor/common/touchscreen_v2/hxchipset_v3_3 source/drivers/vendor/common/touchscreen_v2/
           cp -a /tmp/z/drivers/misc/sprd_camera source/drivers/misc/
           cp -a /tmp/a/drivers/unisoc_platform/sprdwcn/include/*.h source/drivers/misc/sprdwcn/include/
-          mkdir -p source/drivers/misc/sprdwcn/platform
           cp -a /tmp/a/drivers/unisoc_platform/sprdwcn/sdio/sdiohal.h source/drivers/misc/sprdwcn/platform/
           cp -a /tmp/a/drivers/unisoc_platform/sprdwcn/include/sprd_wcn.h source/drivers/misc/sprdwcn/platform/
 
@@ -58,15 +58,14 @@ jobs:
         run: |
           cd source
           chmod +x arch/arm64/kernel/vdso/gen_vdso_offsets.sh
+          chmod +x scripts/ld-version.sh
           sed -i '/^HOST_EXTRACFLAGS := /s/$/ -fcommon/' scripts/dtc/Makefile
           sed -i 's/HOSTLDLIBS_dtc/HOSTLOADLIBES_dtc/' scripts/dtc/Makefile
-          grep -q 'WCN_BOUND_XO_MODE' drivers/misc/sprdwcn/include/umw2653_glb.h && \
-            printf '#define WCN_BOUND_XO_MODE\tBIT(15)\n' >> drivers/misc/sprdwcn/include/umw2653_glb.h || true
+          grep -q 'WCN_BOUND_XO_MODE' drivers/misc/sprdwcn/include/umw2653_glb.h && printf '#define WCN_BOUND_XO_MODE BIT(15)\n' >> drivers/misc/sprdwcn/include/umw2653_glb.h || true
           mkdir -p include/generated
           echo '#define vdso_offset_sigtramp 0x0648' > include/generated/vdso-offsets.h
-          # Fix sprd_dfs_trace.h include path (relative to kernel root)
-          sed -i 's|../../drivers/devfreq/sprd|../../drivers/devfreq/sprd|' drivers/devfreq/sprd/sprd_dfs_trace.h
-
+          # Fix sprd_dfs_trace.h (disable trace re-include)
+          sed -i 's|TRACE_INCLUDE_PATH|TRACE_INCLUDE_PATH|' drivers/devfreq/sprd/sprd_dfs_trace.h
 
       - name: Configure
         run: |
