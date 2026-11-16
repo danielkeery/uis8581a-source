@@ -34,7 +34,7 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq make gcc-aarch64-linux-gnu \
-            device-tree-compiler ccache
+            device-tree-compiler ccache libyaml-dev
 
       - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
@@ -47,8 +47,7 @@ jobs:
       - name: Clone linux-sprd (4.14.133)
         run: |
           git clone --depth 1 https://github.com/strongtz/linux-sprd source
-          cd source
-          echo "commit: $(git rev-parse HEAD)"
+          echo "commit: $(cd source && git rev-parse HEAD)"
 
       - name: Clone module sources
         run: |
@@ -59,87 +58,88 @@ jobs:
           # WLAN (marlin3_sipc)
           git clone --depth 1 https://github.com/Yazz246/Aether_Kernel-A665L /tmp/aether
           cp -a /tmp/aether/drivers/unisoc_platform/wlan source/drivers/unisoc_platform/
-          cp -a /tmp/aether/drivers/unisoc_platform/sprdwcn/include/*.h source/drivers/misc/sprdwcn/include/ 2>/dev/null || true
           # Camera BSP
           git clone --depth 1 https://github.com/Hadenix/android_kernel_zte_sc9863a /tmp/zte
           cp -a /tmp/zte/drivers/misc/sprd_camera source/drivers/misc/
           cp -a /tmp/zte/drivers/input/touchscreen/synaptics_dsx source/drivers/input/touchscreen/ 2>/dev/null || true
           cp -a /tmp/aether/drivers/vendor/common/touchscreen_v2/hxchipset_v3_3 source/drivers/vendor/common/touchscreen_v2/ 2>/dev/null || true
-          # Vendor headers for WCN platform
+          # Vendor headers
           mkdir -p source/drivers/misc/sprdwcn/platform
           cp -a /tmp/aether/drivers/unisoc_platform/sprdwcn/sdio/sdiohal.h source/drivers/misc/sprdwcn/platform/ 2>/dev/null || true
+          cp -a /tmp/aether/drivers/unisoc_platform/sprdwcn/include/*.h source/drivers/misc/sprdwcn/include/ 2>/dev/null || true
           cp -a /tmp/aether/drivers/unisoc_platform/sprdwcn/include/sprd_wcn.h source/drivers/misc/sprdwcn/platform/ 2>/dev/null || true
-          cp /tmp/aether/drivers/unisoc_platform/sprdwcn/include/*.h source/drivers/misc/sprdwcn/include/ 2>/dev/null || true
 
       - name: Apply patches
         run: |
           cd source
           # dtc -fcommon (GCC 16 compat)
-          sed -i 's|^HOST_EXTRACFLAGS := -I\$\(src\)/libfdt|HOST_EXTRACFLAGS := -I$(src)/libfdt -fcommon|' scripts/dtc/Makefile 2>/dev/null || true
+          sed -i 's|^HOST_EXTRACFLAGS := -I\$(src)/libfdt|HOST_EXTRACFLAGS := -I$(src)/libfdt -fcommon|' scripts/dtc/Makefile
           # vdso offset
           mkdir -p include/generated
-          echo '#define vdso_offset_sigtramp  0x0648' > include/generated/vdso-offsets.h
+          printf '#define vdso_offset_sigtramp\t0x0648\n' > include/generated/vdso-offsets.h
           # WCN_BOUND_XO_MODE for UMW2653
           grep -q 'WCN_BOUND_XO_MODE' drivers/misc/sprdwcn/include/umw2653_glb.h 2>/dev/null && \
-            echo '#define WCN_BOUND_XO_MODE BIT(15)' >> drivers/misc/sprdwcn/include/umw2653_glb.h || true
+            printf '#define WCN_BOUND_XO_MODE\tBIT(15)\n' >> drivers/misc/sprdwcn/include/umw2653_glb.h || true
 
       - name: Configure
         run: |
-          cd source
-          cp ${{ github.workspace }}/artifacts/running.config .config
-          make ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" olddefconfig
+          cp ${{ github.workspace }}/artifacts/running.config source/.config
+          make -C source ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" olddefconfig
 
-      - name: Build kernel Image
+      - name: Build kernel Image + DTBs
         run: |
-          cd source
-          make -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" KCFLAGS="-Wno-error" Image 2>&1 | tail -30
-
-      - name: Build DTBs
-        run: |
-          cd source
-          make -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" dtbs 2>&1 | tail -10
+          make -C source -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" KCFLAGS="-Wno-error" Image dtbs
 
       - name: Build out-of-tree modules
         run: |
           cd source
-          MODS=(
-            "drivers/unisoc_platform/wlan/marlin3_sipc"
-            "drivers/unisoc_platform/sprdwcn_bsp/sipc_modules/bluetooth/driver BSP_BOARD_UNISOC_WCN_SOCKET=sipc"
-            "drivers/unisoc_platform/sprdwcn_bsp/sipc_modules/fm/driver BSP_BOARD_UNISOC_WCN_SOCKET=sipc"
-            "drivers/misc/sprd_camera/cpp/lite_r4p0"
+          TOTAL_FAIL=0
+          for entry in \
+            "drivers/unisoc_platform/wlan/marlin3_sipc" \
+            "drivers/unisoc_platform/sprdwcn_bsp/sipc_modules/bluetooth/driver BSP_BOARD_UNISOC_WCN_SOCKET=sipc" \
+            "drivers/unisoc_platform/sprdwcn_bsp/sipc_modules/fm/driver BSP_BOARD_UNISOC_WCN_SOCKET=sipc" \
+            "drivers/misc/sprd_camera/cpp/lite_r4p0" \
             "drivers/misc/sprd_camera/flash"
-          )
-          for entry in "${MODS[@]}"; do
+          do
             dir="${entry%% *}"
             extra="${entry#* }"
             [ "$extra" = "$dir" ] && extra=""
-            echo "=== Building $dir ==="
             if [ -d "$dir" ]; then
-              make -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" M="$dir" $extra modules 2>&1 | tail -5 || echo "WARN: $dir had errors"
+              echo "=== Building $dir ==="
+              make -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" M="$dir" $extra modules && \
+                echo "OK: $dir" || { TOTAL_FAIL=$((TOTAL_FAIL+1)); echo "FAIL: $dir"; }
             else
-              echo "SKIP: $dir not in tree"
+              echo "SKIP: $dir not found"
             fi
           done
+          exit $TOTAL_FAIL
 
       - name: List results
         run: |
-          cd source
-          echo "=== Image ==="
-          ls -lh arch/arm64/boot/Image 2>/dev/null || echo "no Image"
-          echo "=== DTBs ==="
-          ls -lh arch/arm64/boot/dts/sprd/*.dtb 2>/dev/null | head -10
-          echo "=== Modules ==="
-          find . -name "*.ko" -type f -exec ls -lh {} \; 2>/dev/null | head -20
+          echo "=== Kernel Image ==="
+          ls -lh source/arch/arm64/boot/Image
+          echo "=== Device Tree Blobs ==="
+          ls -lh source/arch/arm64/boot/dts/sprd/*.dtb | head -10
+          echo "=== Built Modules ==="
+          find source -name "*.ko" -type f -exec ls -lh {} \;
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: uis8581a-build-${{ github.sha }}
+          name: uis8581a-build
           path: |
             source/arch/arm64/boot/Image
             source/arch/arm64/boot/dts/sprd/*.dtb
             source/arch/arm64/boot/dts/sprd/*.dtbo
             source/vmlinux
             source/.config
-            source/**/*.ko
+          retention-days: 90
+
+      - name: Upload built modules
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uis8581a-modules
+          path: |
+            source/drivers/**/*.ko
           retention-days: 90
