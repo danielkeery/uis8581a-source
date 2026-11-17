@@ -69,6 +69,8 @@ jobs:
           # Restore strongtz glb headers clobbered by temp copy (Aether uses M3E_ names, wrong for wcn_boot.c)
           git checkout -- drivers/misc/sprdwcn/include/umw2653_glb.h drivers/misc/sprdwcn/include/umw2652_glb.h drivers/misc/sprdwcn/include/sc2355_glb.h drivers/misc/sprdwcn/include/sc2342_glb.h drivers/misc/sprdwcn/include/wcn_glb.h drivers/misc/sprdwcn/include/wcn_glb_reg.h drivers/misc/sprdwcn/include/wcn_dbg.h drivers/misc/sprdwcn/include/wcn_types.h
           grep -q 'WCN_BOUND_XO_MODE' drivers/misc/sprdwcn/include/umw2653_glb.h || printf '#define WCN_BOUND_XO_MODE BIT(15)\n' >> drivers/misc/sprdwcn/include/umw2653_glb.h
+          # marlin3_base_glb.h holds AHB_EB0/BT_EN/CLK_CTRL3 needed by wcn_dump.c
+          grep -q 'marlin3_base_glb.h' drivers/misc/sprdwcn/include/umw2653_glb.h || sed -i '1i #include "marlin3_base_glb.h"' drivers/misc/sprdwcn/include/umw2653_glb.h
           # Fix wcn_glb.h files: use our patched versions with UMW2653 + ring sizes
           cp ../patches/wcn_include_wcn_glb.h drivers/misc/sprdwcn/include/wcn_glb.h
           cp ../patches/wcn_platform_wcn_glb.h drivers/misc/sprdwcn/platform/wcn_glb.h
