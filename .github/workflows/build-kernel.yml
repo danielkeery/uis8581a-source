@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workspace }}
+  group: kernel-ci-\${{ github.ref }}
   cancel-in-progress: true
 
 env:
