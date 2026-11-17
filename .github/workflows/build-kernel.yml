@@ -75,7 +75,7 @@ jobs:
           # Fix platform/wcn_glb.h missing (strongtz/linux-sprd lacks it)
           cp ../patches/wcn_platform_wcn_glb.h drivers/misc/sprdwcn/platform/wcn_glb.h
           # Ensure include/wcn_glb.h has UMW2653 support (temp copy may clobber it)
-          grep -q 'CONFIG_UMW2653' drivers/misc/sprdwcn/include/wcn_glb.h || sed -i '/^#endif$/i #ifdef CONFIG_UMW2653\n#include "umw2653_glb.h"\n#include "wcn_dump.h"\n#endif' drivers/misc/sprdwcn/include/wcn_glb.h
+          python3 ../patches/fix_wcn_glb.py drivers/misc/sprdwcn/include/wcn_glb.h
 
       - name: Configure
         run: |
