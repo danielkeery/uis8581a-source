@@ -69,7 +69,7 @@ jobs:
           sed -i '/^#define TRACE_INCLUDE_PATH \./s/^/#define TRACE_INCLUDE_PATH_KILLED\n\/\//' drivers/devfreq/sprd/sprd_dfs_trace.h
           mkdir -p include/trace
           mkdir -p include/trace/events
-          ln -sf ../../../../drivers/devfreq/sprd/sprd_dfs_trace.h include/trace/events/sprd_dfs_trace.h
+          ln -sf ../../../drivers/devfreq/sprd/sprd_dfs_trace.h include/trace/events/sprd_dfs_trace.h
           cp -a drivers/misc/sprdwcn_temp/platform drivers/misc/sprdwcn_temp/include drivers/misc/sprdwcn/ 2>/dev/null || true
           cp -a drivers/misc/sprdwcn_temp/Makefile drivers/misc/sprdwcn/ 2>/dev/null || true
 
