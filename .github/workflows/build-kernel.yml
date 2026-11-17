@@ -79,6 +79,8 @@ jobs:
         run: |
           cp artifacts/running.config source/.config
           make -C source ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" olddefconfig
+          grep "UMW2653" source/.config || true
+          cat source/drivers/misc/sprdwcn/platform/wcn_glb.h || true
 
       - name: Build
         run: make -C source -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" KCFLAGS="-Wno-error" Image dtbs
