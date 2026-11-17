@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}
+  group: ${{ github.workspace }}
   cancel-in-progress: true
 
 env:
@@ -64,8 +64,6 @@ jobs:
           grep -q 'WCN_BOUND_XO_MODE' drivers/misc/sprdwcn/include/umw2653_glb.h && printf '#define WCN_BOUND_XO_MODE BIT(15)\n' >> drivers/misc/sprdwcn/include/umw2653_glb.h || true
           mkdir -p include/generated
           echo '#define vdso_offset_sigtramp 0x0648' > include/generated/vdso-offsets.h
-          # Fix sprd_dfs_trace.h trace re-include path
-          sed -i '/TRACE_INCLUDE_PATH/s|^|//|' drivers/devfreq/sprd/sprd_dfs_trace.h
           echo '#include "sc2342_glb.h"' >> drivers/misc/sprdwcn/include/wcn_glb.h
           cp -a drivers/misc/sprdwcn_temp/platform drivers/misc/sprdwcn_temp/include drivers/misc/sprdwcn/ 2>/dev/null || true
           cp -a drivers/misc/sprdwcn_temp/Makefile drivers/misc/sprdwcn/ 2>/dev/null || true
@@ -76,7 +74,7 @@ jobs:
           make -C source ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" olddefconfig
 
       - name: Build
-        run: make -C source -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" KCFLAGS="-Wno-error -I$(pwd)/source/drivers/devfreq/sprd" Image dtbs
+        run: make -C source -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" KCFLAGS="-Wno-error" Image dtbs
 
       - name: Modules
         run: |
