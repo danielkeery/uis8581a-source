@@ -94,6 +94,8 @@ jobs:
           sed -i 's/static int marlin_probe(/int marlin_probe(/; s/static int  marlin_remove(/int marlin_remove(/; s/static void marlin_shutdown(/void marlin_shutdown(/' drivers/misc/sprdwcn/platform/wcn_boot.c
           # Ensure GNSS dump compiles (umw2653_glb.h macros needed)
           sed -i '1i #include "umw2653_glb.h"' drivers/misc/sprdwcn/platform/gnss/gnss_dump.c
+          # Fix dwc3 implicit declarations (host suspend/resume missing when HOST enabled)
+          python3 ../patches/fix_dwc3_core_h.py drivers/usb/dwc3/core.h
 
       - name: Configure
         run: |
