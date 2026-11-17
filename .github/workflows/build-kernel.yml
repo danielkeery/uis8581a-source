@@ -50,9 +50,9 @@ jobs:
           cp -a /tmp/a/drivers/unisoc_platform/wlan source/drivers/unisoc_platform/
           cp -a /tmp/a/drivers/vendor/common/touchscreen_v2/hxchipset_v3_3 source/drivers/vendor/common/touchscreen_v2/
           cp -a /tmp/z/drivers/misc/sprd_camera source/drivers/misc/
-          cp -a /tmp/a/drivers/unisoc_platform/sprdwcn/include/*.h source/drivers/misc/sprdwcn/include/
+          cp -a /tmp/a/drivers/unisoc_platform/sprdwcn/include/sdiohal.h source/drivers/misc/sprdwcn/include/
+          cp -a /tmp/a/drivers/unisoc_platform/sprdwcn/include/sprd_wcn.h source/drivers/misc/sprdwcn/include/
           cp -a /tmp/a/drivers/unisoc_platform/sprdwcn/sdio/sdiohal.h source/drivers/misc/sprdwcn/platform/
-          cp -a /tmp/a/drivers/unisoc_platform/sprdwcn/include/sprd_wcn.h source/drivers/misc/sprdwcn/platform/
 
       - name: Patch
         run: |
@@ -74,24 +74,11 @@ jobs:
           ln -sf ../../../drivers/devfreq/sprd/sprd_dfs_trace.h include/trace/events/sprd_dfs_trace.h
           # Fix platform/wcn_glb.h missing (strongtz/linux-sprd lacks it)
           cp drivers/misc/sprdwcn/include/wcn_glb.h drivers/misc/sprdwcn/platform/wcn_glb.h
-          # platform/ copies from temp have wrong macro names; use correct include/ versions
-          for h in umw2653_glb.h sc2355_glb.h sc2342_glb.h umw2652_glb.h; do
-            cp "drivers/misc/sprdwcn/include/$h" "drivers/misc/sprdwcn/platform/$h" 2>/dev/null || true
-          done
-          # Ensure include/wcn_glb.h has UMW2653 support (temp copy may clobber it)
-          python3 ../patches/fix_wcn_glb.py drivers/misc/sprdwcn/include/wcn_glb.h
-          # DEBUG: identify which wcn_glb.h gets included
-          sed -i '1i #pragma message "USING include/wcn_glb.h"' drivers/misc/sprdwcn/include/wcn_glb.h
-          sed -i '1i #pragma message "USING platform/wcn_glb.h"' drivers/misc/sprdwcn/platform/wcn_glb.h
-          # DEBUG: prove CONFIG_UMW2653 block is entered
-          sed -i '/#ifdef CONFIG_UMW2653/a #pragma message "UMW2653 block active"' drivers/misc/sprdwcn/include/wcn_glb.h
 
       - name: Configure
         run: |
           cp artifacts/running.config source/.config
           make -C source ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" olddefconfig
-          grep "UMW2653" source/.config || true
-          cat source/drivers/misc/sprdwcn/platform/wcn_glb.h || true
 
       - name: Build
         run: make -C source -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" KCFLAGS="-Wno-error" Image dtbs
