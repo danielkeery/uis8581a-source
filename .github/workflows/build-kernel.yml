@@ -71,9 +71,7 @@ jobs:
           mkdir -p include/trace/events
           ln -sf ../../../drivers/devfreq/sprd/sprd_dfs_trace.h include/trace/events/sprd_dfs_trace.h
           # Fix platform/wcn_glb.h missing (strongtz/linux-sprd lacks it)
-          cp drivers/misc/sprdwcn/include/wcn_glb.h drivers/misc/sprdwcn/platform/wcn_glb.h
-          # Add missing MDBG_RX_RING_SIZE defines that wcn_txrx.c expects
-          sed -i '/^#endif$/i #define M3E_MDBG_RX_RING_SIZE\t(64*1024)\n#define M3L_MDBG_RX_RING_SIZE\t(96*1024)\n#define M3_MDBG_RX_RING_SIZE\t(96*1024)\n#define MDBG_RX_RING_SIZE\t(128*1024)' drivers/misc/sprdwcn/platform/wcn_glb.h
+          cp ../patches/wcn_platform_wcn_glb.h drivers/misc/sprdwcn/platform/wcn_glb.h
           # Fix missing mutex.h includes in WCN headers (GCC 16 strictness)
           sed -i '/^#define __SLP_MGR_H__$/a #include <linux/mutex.h>' drivers/misc/sprdwcn/sleep/slp_mgr.h
           sed -i '/^#define __MEM_PD_MGR__$/a #include <linux/mutex.h>' drivers/misc/sprdwcn/platform/mem_pd_mgr.h

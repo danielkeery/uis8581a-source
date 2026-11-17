@@ -23,13 +23,13 @@
 #include "wcn_integrate_dev.h"
 
 #ifdef CONFIG_UMW2653
-#include "../include/umw2653_glb.h"
+#include "umw2653_glb.h"
 #endif
 
 /* log buf size */
 #define M3E_MDBG_RX_RING_SIZE		(64*1024)
-#define M3L_MDBG_RX_RING_SIZE		(96 * 1024)
-#define M3_MDBG_RX_RING_SIZE		(96 * 1024)
-#define MDBG_RX_RING_SIZE	(128 * 1024)
+#define M3L_MDBG_RX_RING_SIZE		(96*1024)
+#define M3_MDBG_RX_RING_SIZE		(96*1024)
+#define MDBG_RX_RING_SIZE	(128*1024)
 
 #endif
