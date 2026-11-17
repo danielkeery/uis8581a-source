@@ -66,8 +66,9 @@ jobs:
           echo '#define vdso_offset_sigtramp 0x0648' > include/generated/vdso-offsets.h
           # Fix sprd_dfs_trace.h (disable trace re-include)
           sed -i 's|TRACE_INCLUDE_PATH|TRACE_INCLUDE_PATH|' drivers/devfreq/sprd/sprd_dfs_trace.h
-          # Copy missing headers from sprdwcn_temp
-          cp -a drivers/misc/sprdwcn_temp/* drivers/misc/sprdwcn/ 2>/dev/null || true
+          # Copy only needed headers from sprdwcn_temp (not GNSS which has build errors)
+          cp -a drivers/misc/sprdwcn_temp/platform drivers/misc/sprdwcn_temp/include drivers/misc/sprdwcn/ 2>/dev/null || true
+          cp -a drivers/misc/sprdwcn_temp/Makefile drivers/misc/sprdwcn/ 2>/dev/null || true
 
       - name: Configure
         run: |
