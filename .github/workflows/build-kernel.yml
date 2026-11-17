@@ -106,8 +106,12 @@ jobs:
         run: make -C source -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" KCFLAGS="-Wno-error" Image dtbs
 
       - name: Modules
+        if: always()
+        continue-on-error: true
         run: |
           cd source
+          # Best-effort out-of-tree module builds (BSP drivers need env vars).
+          # Failures here must not lose the (successful) base kernel Image.
           for d in \
             drivers/unisoc_platform/wlan/marlin3_sipc \
             drivers/unisoc_platform/sprdwcn_bsp/sipc_modules/bluetooth/driver \
@@ -115,10 +119,14 @@ jobs:
             drivers/misc/sprd_camera/cpp/lite_r4p0 \
             drivers/misc/sprd_camera/flash
           do
+            if [ ! -f "$d/Makefile" ] && [ ! -f "$d/Kbuild" ]; then
+              echo "skip (no Makefile/Kbuild): $d"
+              continue
+            fi
             echo "=== $d ==="
             E=""
-            case $d in *bluetooth*|*fm*) E="BSP_BOARD_UNISOC_WCN_SOCKET=sipc";; esac
-            make -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" M=$d $E modules
+            case $d in *bluetooth*|*fm*) E="BSP_BOARD_UNISOC_WCN_SOCKET=sipc BSP_KERNEL_PATH=$PWD BSP_MODULES_OUT=$PWD/modules_out";; esac
+            make -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" M=$d $E modules || echo "module build failed (non-fatal): $d"
           done
 
       - name: Upload
