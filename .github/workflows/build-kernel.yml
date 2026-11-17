@@ -72,6 +72,9 @@ jobs:
           ln -sf ../../../drivers/devfreq/sprd/sprd_dfs_trace.h include/trace/events/sprd_dfs_trace.h
           # Fix platform/wcn_glb.h missing (strongtz/linux-sprd lacks it)
           cp drivers/misc/sprdwcn/include/wcn_glb.h drivers/misc/sprdwcn/platform/wcn_glb.h
+          # Fix missing mutex.h includes in WCN headers (GCC 16 strictness)
+          sed -i '/^#define __SLP_MGR_H__$/a #include <linux/mutex.h>' drivers/misc/sprdwcn/sleep/slp_mgr.h
+          sed -i '/^#define __MEM_PD_MGR__$/a #include <linux/mutex.h>' drivers/misc/sprdwcn/platform/mem_pd_mgr.h
           # Ensure GNSS dump compiles (umw2653_glb.h macros needed)
           sed -i '1i #include "umw2653_glb.h"' drivers/misc/sprdwcn/platform/gnss/gnss_dump.c
 
