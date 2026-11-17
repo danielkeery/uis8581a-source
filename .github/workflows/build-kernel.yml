@@ -70,8 +70,8 @@ jobs:
           mkdir -p include/trace
           mkdir -p include/trace/events
           ln -sf ../../../drivers/devfreq/sprd/sprd_dfs_trace.h include/trace/events/sprd_dfs_trace.h
-          # Fix platform/wcn_glb.h missing UMW2653 include (gnss_dump.c needs it)
-          sed -i '/^#endif$/i #ifdef CONFIG_UMW2653\n#include "umw2653_glb.h"\n#endif' drivers/misc/sprdwcn/platform/wcn_glb.h
+          # Fix platform/wcn_glb.h missing (strongtz/linux-sprd lacks it)
+          cp ../patches/wcn_platform_wcn_glb.h drivers/misc/sprdwcn/platform/wcn_glb.h
           cp -a drivers/misc/sprdwcn_temp/platform drivers/misc/sprdwcn_temp/include drivers/misc/sprdwcn/ 2>/dev/null || true
           cp -a drivers/misc/sprdwcn_temp/Makefile drivers/misc/sprdwcn/ 2>/dev/null || true
 
