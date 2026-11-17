@@ -74,6 +74,10 @@ jobs:
           ln -sf ../../../drivers/devfreq/sprd/sprd_dfs_trace.h include/trace/events/sprd_dfs_trace.h
           # Fix platform/wcn_glb.h missing (strongtz/linux-sprd lacks it)
           cp drivers/misc/sprdwcn/include/wcn_glb.h drivers/misc/sprdwcn/platform/wcn_glb.h
+          # platform/ copies from temp have wrong macro names; use correct include/ versions
+          for h in umw2653_glb.h sc2355_glb.h sc2342_glb.h umw2652_glb.h; do
+            cp "drivers/misc/sprdwcn/include/$h" "drivers/misc/sprdwcn/platform/$h" 2>/dev/null || true
+          done
           # Ensure include/wcn_glb.h has UMW2653 support (temp copy may clobber it)
           python3 ../patches/fix_wcn_glb.py drivers/misc/sprdwcn/include/wcn_glb.h
           # DEBUG: identify which wcn_glb.h gets included
