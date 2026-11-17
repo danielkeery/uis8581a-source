@@ -70,6 +70,10 @@ jobs:
           cp ../patches/wcn_include_wcn_glb.h drivers/misc/sprdwcn/include/wcn_glb.h
           cp ../patches/wcn_platform_wcn_glb.h drivers/misc/sprdwcn/platform/wcn_glb.h
           cp ../patches/wcn_include_wcn_glb_reg.h drivers/misc/sprdwcn/include/wcn_glb_reg.h
+          # platform/ copies from temp (aether) have wrong M3E_ names; replace with strongtz include/ versions
+          for h in umw2653_glb.h umw2652_glb.h sc2355_glb.h sc2342_glb.h wcn_glb_reg.h wcn_dbg.h wcn_types.h; do
+            cp "drivers/misc/sprdwcn/include/$h" "drivers/misc/sprdwcn/platform/$h" 2>/dev/null || true
+          done
           # Fix sprd_dfs_trace.h: comment out TRACE_INCLUDE_PATH + create include symlink
           sed -i '/^#define TRACE_INCLUDE_PATH \./s/^/#define TRACE_INCLUDE_PATH_KILLED\n\/\//' drivers/devfreq/sprd/sprd_dfs_trace.h
           mkdir -p include/trace/events
