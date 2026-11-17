@@ -1,6 +1,9 @@
 #ifndef __MARLIN3_BASE_GLB_H__
 #define __MARLIN3_BASE_GLB_H__
 
+#include <linux/kernel.h>
+#include <linux/bitops.h>
+
 #define CP_START_ADDR		0x40500000
 
 #define CP_SDIO_PRIORITY_ADDR 0x40130150
