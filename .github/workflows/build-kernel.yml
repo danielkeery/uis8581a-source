@@ -76,6 +76,9 @@ jobs:
           cp ../patches/wcn_platform_wcn_glb.h drivers/misc/sprdwcn/platform/wcn_glb.h
           # Ensure include/wcn_glb.h has UMW2653 support (temp copy may clobber it)
           python3 ../patches/fix_wcn_glb.py drivers/misc/sprdwcn/include/wcn_glb.h
+          # DEBUG: identify which wcn_glb.h gets included
+          sed -i '1i #pragma message "USING include/wcn_glb.h"' drivers/misc/sprdwcn/include/wcn_glb.h
+          sed -i '1i #pragma message "USING platform/wcn_glb.h"' drivers/misc/sprdwcn/platform/wcn_glb.h
 
       - name: Configure
         run: |
