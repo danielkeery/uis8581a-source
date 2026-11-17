@@ -68,11 +68,12 @@ jobs:
           cp -a drivers/misc/sprdwcn_temp/Makefile drivers/misc/sprdwcn/ 2>/dev/null || true
           # Fix sprd_dfs_trace.h: comment out TRACE_INCLUDE_PATH + create include symlink
           sed -i '/^#define TRACE_INCLUDE_PATH \./s/^/#define TRACE_INCLUDE_PATH_KILLED\n\/\//' drivers/devfreq/sprd/sprd_dfs_trace.h
-          mkdir -p include/trace
           mkdir -p include/trace/events
           ln -sf ../../../drivers/devfreq/sprd/sprd_dfs_trace.h include/trace/events/sprd_dfs_trace.h
           # Fix platform/wcn_glb.h missing (strongtz/linux-sprd lacks it)
           cp drivers/misc/sprdwcn/include/wcn_glb.h drivers/misc/sprdwcn/platform/wcn_glb.h
+          # Ensure GNSS dump compiles (umw2653_glb.h macros needed)
+          sed -i '1i #include "umw2653_glb.h"' drivers/misc/sprdwcn/platform/gnss/gnss_dump.c
 
       - name: Configure
         run: |
