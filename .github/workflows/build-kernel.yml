@@ -79,6 +79,8 @@ jobs:
           # DEBUG: identify which wcn_glb.h gets included
           sed -i '1i #pragma message "USING include/wcn_glb.h"' drivers/misc/sprdwcn/include/wcn_glb.h
           sed -i '1i #pragma message "USING platform/wcn_glb.h"' drivers/misc/sprdwcn/platform/wcn_glb.h
+          # DEBUG: prove CONFIG_UMW2653 block is entered
+          sed -i '/#ifdef CONFIG_UMW2653/a #pragma message "UMW2653 block active"' drivers/misc/sprdwcn/include/wcn_glb.h
 
       - name: Configure
         run: |
