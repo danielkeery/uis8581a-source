@@ -80,7 +80,7 @@ jobs:
           cd source && scripts/config --undefine WCN_GNSS_ONLY --undefine WCN_BOOT --undefine WCN_PLATFORM
 
       - name: Build
-        run: make -C source -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" KCFLAGS="-Wno-error -I$(pwd)/source/drivers/devfreq/sprd" Image dtbs
+        run: make -C source -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" KCFLAGS="-Wno-error -I$(pwd)/source/drivers/devfreq/sprd" olddefconfig Image dtbs
 
       - name: Modules
         run: |
