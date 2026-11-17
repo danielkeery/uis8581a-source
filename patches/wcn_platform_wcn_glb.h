@@ -14,10 +14,6 @@
 #include "sprd_wcn.h"
 #include "wcn_dump.h"
 #include "wcn_glb_reg.h"
-#include "wcn_dump_integrate.h"
-#include "wcn_integrate.h"
-#include "wcn_integrate_boot.h"
-#include "wcn_integrate_dev.h"
 
 #ifdef CONFIG_UMW2653
 #include "umw2653_glb.h"
