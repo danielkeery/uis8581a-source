@@ -64,8 +64,10 @@ jobs:
           grep -q 'WCN_BOUND_XO_MODE' drivers/misc/sprdwcn/include/umw2653_glb.h && printf '#define WCN_BOUND_XO_MODE BIT(15)\n' >> drivers/misc/sprdwcn/include/umw2653_glb.h || true
           mkdir -p include/generated
           echo '#define vdso_offset_sigtramp 0x0648' > include/generated/vdso-offsets.h
-          # Fix sprd_dfs_trace.h (disable trace re-include)
-          sed -i 's|TRACE_INCLUDE_PATH|TRACE_INCLUDE_PATH|' drivers/devfreq/sprd/sprd_dfs_trace.h
+          # Fix missing GNSS constants in sprdwcn
+          echo '#ifndef GNSS_CP_START_ADDR' >> drivers/misc/sprdwcn/include/wcn_glb.h
+          echo '#include "sc2342_glb.h"' >> drivers/misc/sprdwcn/include/wcn_glb.h
+          echo '#include "sc2355_glb.h"' >> drivers/misc/sprdwcn/include/wcn_glb.h
           # Copy only needed headers from sprdwcn_temp (not GNSS which has build errors)
           cp -a drivers/misc/sprdwcn_temp/platform drivers/misc/sprdwcn_temp/include drivers/misc/sprdwcn/ 2>/dev/null || true
           cp -a drivers/misc/sprdwcn_temp/Makefile drivers/misc/sprdwcn/ 2>/dev/null || true
@@ -75,7 +77,7 @@ jobs:
           cp artifacts/running.config source/.config
           make -C source ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" olddefconfig
           # Disable broken drivers for now
-          cd source && scripts/config --undefine WCN_GNSS_ONLY
+          cd source && scripts/config --undefine WCN_GNSS_ONLY --undefine WCN_BOOT --undefine WCN_PLATFORM
 
       - name: Build
         run: make -C source -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" KCFLAGS="-Wno-error -I$(pwd)/source/drivers/devfreq/sprd" Image dtbs
