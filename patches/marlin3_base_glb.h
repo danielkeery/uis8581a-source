@@ -39,14 +39,6 @@
 #define BT_RST					BIT(0)
 #define WIFI_RST				BIT(1)
 
-#define WCN_CLOCK_TYPE_UNKNOWN	0
-#define WCN_CLOCK_TYPE_TCXO		1
-#define WCN_CLOCK_TYPE_TSX		2
-
-#define WCN_CLOCK_MODE_UNKNOWN	0
-#define WCN_CLOCK_MODE_XO		1
-#define WCN_CLOCK_MODE_BUFFER	2
-
 #define WCN_POWERUP_WAIT_MS		60000
 
 #endif
