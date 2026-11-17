@@ -23,7 +23,7 @@
 #include "wcn_integrate_dev.h"
 
 #ifdef CONFIG_UMW2653
-#include "umw2653_glb.h"
+#include "../include/umw2653_glb.h"
 #endif
 
 /* log buf size */
