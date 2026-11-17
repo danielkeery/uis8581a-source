@@ -63,17 +63,22 @@ jobs:
           grep -q 'WCN_BOUND_XO_MODE' drivers/misc/sprdwcn/include/umw2653_glb.h && printf '#define WCN_BOUND_XO_MODE BIT(15)\n' >> drivers/misc/sprdwcn/include/umw2653_glb.h || true
           mkdir -p include/generated
           echo '#define vdso_offset_sigtramp 0x0648' > include/generated/vdso-offsets.h
-          # Copy temp WCN files (must happen before patching wcn_glb.h)
+          # Copy temp WCN files
           cp -a drivers/misc/sprdwcn_temp/platform drivers/misc/sprdwcn_temp/include drivers/misc/sprdwcn/ 2>/dev/null || true
           cp -a drivers/misc/sprdwcn_temp/Makefile drivers/misc/sprdwcn/ 2>/dev/null || true
+          # Restore strongtz glb headers clobbered by temp copy (Aether uses M3E_ names, wrong for wcn_boot.c)
+          git checkout -- drivers/misc/sprdwcn/include/umw2653_glb.h drivers/misc/sprdwcn/include/umw2652_glb.h drivers/misc/sprdwcn/include/sc2355_glb.h drivers/misc/sprdwcn/include/sc2342_glb.h drivers/misc/sprdwcn/include/wcn_glb.h drivers/misc/sprdwcn/include/wcn_glb_reg.h drivers/misc/sprdwcn/include/wcn_dbg.h drivers/misc/sprdwcn/include/wcn_types.h
+          grep -q 'WCN_BOUND_XO_MODE' drivers/misc/sprdwcn/include/umw2653_glb.h || printf '#define WCN_BOUND_XO_MODE BIT(15)\n' >> drivers/misc/sprdwcn/include/umw2653_glb.h
           # Fix wcn_glb.h files: use our patched versions with UMW2653 + ring sizes
           cp ../patches/wcn_include_wcn_glb.h drivers/misc/sprdwcn/include/wcn_glb.h
           cp ../patches/wcn_platform_wcn_glb.h drivers/misc/sprdwcn/platform/wcn_glb.h
           cp ../patches/wcn_include_wcn_glb_reg.h drivers/misc/sprdwcn/include/wcn_glb_reg.h
-          # platform/ copies from temp (aether) have wrong M3E_ names; replace with strongtz include/ versions
+          # platform/ headers: use strongtz include/ versions (correct macro names)
           for h in umw2653_glb.h umw2652_glb.h sc2355_glb.h sc2342_glb.h wcn_glb_reg.h wcn_dbg.h wcn_types.h; do
             cp "drivers/misc/sprdwcn/include/$h" "drivers/misc/sprdwcn/platform/$h" 2>/dev/null || true
           done
+          # reset_test_init comes from temp platform dir; ensure header visible via wcn_glb.h
+          grep -q 'reset.h' drivers/misc/sprdwcn/platform/wcn_glb.h || sed -i '/^#include "wcn_glb_reg.h"$/a #include "reset.h"' drivers/misc/sprdwcn/platform/wcn_glb.h
           # Fix sprd_dfs_trace.h: comment out TRACE_INCLUDE_PATH + create include symlink
           sed -i '/^#define TRACE_INCLUDE_PATH \./s/^/#define TRACE_INCLUDE_PATH_KILLED\n\/\//' drivers/devfreq/sprd/sprd_dfs_trace.h
           mkdir -p include/trace/events
@@ -83,8 +88,6 @@ jobs:
           sed -i '/^#define __MEM_PD_MGR__$/a #include <linux/mutex.h>' drivers/misc/sprdwcn/platform/mem_pd_mgr.h
           # Fix wcn_boot.c static/non-static conflicts (sprd_wcn.h declares extern)
           sed -i 's/static int marlin_probe(/int marlin_probe(/; s/static int  marlin_remove(/int marlin_remove(/; s/static void marlin_shutdown(/void marlin_shutdown(/' drivers/misc/sprdwcn/platform/wcn_boot.c
-          # reset_test_init comes from temp platform dir; ensure it's in tree
-          cp -a drivers/misc/sprdwcn_temp/platform/reset.c drivers/misc/sprdwcn_temp/platform/reset.h drivers/misc/sprdwcn_temp/platform/reset_test.c drivers/misc/sprdwcn/platform/ 2>/dev/null || true
           # Ensure GNSS dump compiles (umw2653_glb.h macros needed)
           sed -i '1i #include "umw2653_glb.h"' drivers/misc/sprdwcn/platform/gnss/gnss_dump.c
 
