@@ -66,14 +66,13 @@ jobs:
           # Copy temp WCN files (must happen before patching wcn_glb.h)
           cp -a drivers/misc/sprdwcn_temp/platform drivers/misc/sprdwcn_temp/include drivers/misc/sprdwcn/ 2>/dev/null || true
           cp -a drivers/misc/sprdwcn_temp/Makefile drivers/misc/sprdwcn/ 2>/dev/null || true
+          # Fix wcn_glb.h files: use our patched versions with UMW2653 + ring sizes
+          cp ../patches/wcn_include_wcn_glb.h drivers/misc/sprdwcn/include/wcn_glb.h
+          cp ../patches/wcn_platform_wcn_glb.h drivers/misc/sprdwcn/platform/wcn_glb.h
           # Fix sprd_dfs_trace.h: comment out TRACE_INCLUDE_PATH + create include symlink
           sed -i '/^#define TRACE_INCLUDE_PATH \./s/^/#define TRACE_INCLUDE_PATH_KILLED\n\/\//' drivers/devfreq/sprd/sprd_dfs_trace.h
           mkdir -p include/trace/events
           ln -sf ../../../drivers/devfreq/sprd/sprd_dfs_trace.h include/trace/events/sprd_dfs_trace.h
-          # Fix platform/wcn_glb.h missing (strongtz/linux-sprd lacks it)
-          cp ../patches/wcn_platform_wcn_glb.h drivers/misc/sprdwcn/platform/wcn_glb.h
-          # Add MDBG ring-size defines to include/wcn_glb.h (used by wcn_log.c via ../include/wcn_glb.h)
-          sed -i '/^#endif$/i #define M3E_MDBG_RX_RING_SIZE\t(64*1024)\n#define M3L_MDBG_RX_RING_SIZE\t(96*1024)\n#define M3_MDBG_RX_RING_SIZE\t(96*1024)\n#define MDBG_RX_RING_SIZE\t(128*1024)' drivers/misc/sprdwcn/include/wcn_glb.h
           # Fix missing mutex.h includes in WCN headers (GCC 16 strictness)
           sed -i '/^#define __SLP_MGR_H__$/a #include <linux/mutex.h>' drivers/misc/sprdwcn/sleep/slp_mgr.h
           sed -i '/^#define __MEM_PD_MGR__$/a #include <linux/mutex.h>' drivers/misc/sprdwcn/platform/mem_pd_mgr.h
