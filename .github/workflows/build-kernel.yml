@@ -74,6 +74,8 @@ jobs:
         run: |
           cp artifacts/running.config source/.config
           make -C source ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" olddefconfig
+          # Disable broken drivers for now
+          cd source && scripts/config --undefine WCN_GNSS_ONLY
 
       - name: Build
         run: make -C source -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" KCFLAGS="-Wno-error -I$(pwd)/source/drivers/devfreq/sprd" Image dtbs
