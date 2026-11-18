@@ -1,0 +1,30 @@
+### defined functions
+File /work/users/sharebsp/workdir/used8581/bsp/modules/input/misc/tcs3430/tcs3430.c:
+731:	static ssize_t tcs3430_als_atime_show(struct device *, struct device_attribute *, char *);
+740:	static ssize_t tcs3430_als_atime_store(struct device *, struct device_attribute *, const char *, size_t);
+544:	static int tcs3430_als_enable(struct tcs3430_chip *, int);
+588:	static ssize_t tcs3430_als_enable_show(struct device *, struct device_attribute *, char *);
+595:	static ssize_t tcs3430_als_enable_store(struct device *, struct device_attribute *, const char *, size_t);
+613:	static ssize_t tcs3430_als_gain_show(struct device *, struct device_attribute *, char *);
+667:	static ssize_t tcs3430_als_gain_store(struct device *, struct device_attribute *, const char *, size_t);
+648:	static ssize_t tcs3430_als_ir1_show(struct device *, struct device_attribute *, char *);
+634:	static ssize_t tcs3430_als_ir2_show(struct device *, struct device_attribute *, char *);
+761:	static ssize_t tcs3430_als_mux_show(struct device *, struct device_attribute *, char *);
+769:	static ssize_t tcs3430_als_mux_store(struct device *, struct device_attribute *, const char *, size_t);
+702:	static ssize_t tcs3430_als_persist_show(struct device *, struct device_attribute *, char *);
+710:	static ssize_t tcs3430_als_persist_store(struct device *, struct device_attribute *, const char *, size_t);
+641:	static ssize_t tcs3430_als_x_show(struct device *, struct device_attribute *, char *);
+620:	static ssize_t tcs3430_als_y_show(struct device *, struct device_attribute *, char *);
+627:	static ssize_t tcs3430_als_z_show(struct device *, struct device_attribute *, char *);
+1283:	static void tcs3430_exit(void);
+210:	static int tcs3430_flush_regs(struct tcs3430_chip *);
+153:	static int tcs3430_i2c_read(struct tcs3430_chip *, u8, u8 *);
+189:	static int tcs3430_i2c_write(struct tcs3430_chip *, u8, u8);
+1278:	static int tcs3430_init(void);
+484:	static irqreturn_t tcs3430_irq(int, void *);
+351:	static int tcs3430_irq_clr(struct tcs3430_chip *, u8);
+445:	static int tcs3430_irq_handler(struct tcs3430_chip *);
+992:	static int tcs3430_probe(struct i2c_client *, const struct i2c_device_id *);
+1237:	static int tcs3430_remove(struct i2c_client *);
+1199:	static int tcs3430_resume(struct device *);
+1170:	static int tcs3430_suspend(struct device *);
