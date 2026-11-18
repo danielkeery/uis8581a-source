@@ -116,8 +116,20 @@ jobs:
         continue-on-error: true
         run: |
           cd source
-          # Best-effort out-of-tree module builds (BSP drivers need env vars).
-          # Failures here must not lose the (successful) base kernel Image.
+          # Recovered out-of-tree module sources (DWARF-reconstructed + open-source matches)
+          mkdir -p modules_recovered/{ltr308als,tcs3430,qn8027,lsec_audio,ch7026}
+          cp ../recovery/ltr308als/ltr_308als.c modules_recovered/ltr308als/
+          cp ../recovery/tcs3430/tcs3430.c modules_recovered/tcs3430/
+          cp ../recovery/qn8027/qn8027.c modules_recovered/qn8027/
+          cp ../recovery/lsec_audio/lsecaudio.c modules_recovered/lsec_audio/
+          cp ../recovery/ch7026/ch7026.c modules_recovered/ch7026/
+          for d in ltr308als tcs3430 qn8027 lsec_audio ch7026; do
+            obj=$(basename $(ls modules_recovered/$d/*.c | head -1) .c)
+            echo "obj-m += $obj.o" > modules_recovered/$d/Makefile
+            echo "=== building recovered: $d ==="
+            make -j$(nproc) ARCH=arm64 CROSS_COMPILE="ccache aarch64-linux-gnu-" M=$PWD/modules_recovered/$d KCFLAGS="-Wno-error" modules || echo "module build failed (non-fatal): $d"
+          done
+          # Best-effort open-source out-of-tree module builds (BSP drivers need env vars).
           for d in \
             drivers/unisoc_platform/wlan/marlin3_sipc \
             drivers/unisoc_platform/sprdwcn_bsp/sipc_modules/bluetooth/driver \
