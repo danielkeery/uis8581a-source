@@ -1,0 +1,76 @@
+/*
+ * ICN6202 MIPI2LVDS LCD config dtsi — extracted from live UIS8581A2H10 devicetree
+ * (1280x800, 64MHz pixel clock, lcd_id=IDc16202ff)
+ *
+ * SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+ */
+
+#include <dt-bindings/gpio/gpio.h>
+
+/ { lcds {
+	lcd_icn6202_mipi2lvds: lcd_icn6202_mipi2lvds {
+
+		sprd,dsi-work-mode = <1>;
+		sprd,dsi-lane-number = <4>;
+		sprd,dsi-color-format = "rgb888";
+
+		sprd,phy-bit-clock = <376328>;	/* kbps, 0x5b108 */
+		sprd,phy-escape-clock = <20000>;	/* kHz, 0x4e20 */
+
+		sprd,width-mm = <68>;
+		sprd,height-mm = <121>;
+		sprd,esd-check-mode = <0>;
+		sprd,use-dcs-write;
+		sprd,reset-on-sequence;
+		sprd,reset-off-sequence;
+
+		sprd,sleep-in-command = [23 00 00 02 7a c1];
+		sprd,sleep-out-command = [23 00 00 02 7a c1];
+		sprd,initial-command = [
+			23 01 00 02 7a c1
+			23 01 00 02 20 00
+			23 01 00 02 21 58
+			23 01 00 02 22 24
+			23 01 00 02 23 3c
+			23 01 00 02 24 28
+			23 01 00 02 25 3c
+			23 01 00 02 26 00
+			23 01 00 02 27 14
+			23 01 00 02 28 0a
+			23 01 00 02 29 14
+			23 01 00 02 34 80
+			23 01 00 02 36 3c
+			23 01 00 02 b5 a0
+			23 01 00 02 5c ff
+			23 01 00 02 13 10
+			23 01 00 02 56 92
+			23 01 00 02 6b 32
+			23 01 00 02 69 3d
+			23 01 00 02 b6 20
+			23 01 00 02 51 20
+			23 01 00 02 09 10
+			23 01 00 02 41 0f
+			23 01 00 02 42 f4
+			23 01 00 02 7d 4e
+			23 01 00 02 90 10
+			23 01 00 02 91 10
+		];
+
+		icn6202_ldo = "vddcammot";
+		icn6202_ldo_value = <1800000>;	/* 0x1b7740 */
+
+		display-timings {
+			timing0 {
+				hactive = <1024>;
+				vactive = <600>;
+				clock-frequency = <47722222>;	/* 0x2dc6c00 */
+				hfront-porch = <80>;
+				hback-porch = <40>;
+				hsync-len = <4>;
+				vfront-porch = <60>;
+				vback-porch = <40>;
+				vsync-len = <4>;
+			};
+		};
+	};
+};

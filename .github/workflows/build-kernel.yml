@@ -53,6 +53,12 @@ jobs:
           cp -a /tmp/a/drivers/unisoc_platform/sprdwcn/include/sprd_wcn.h source/drivers/misc/sprdwcn/include/
           cp -a /tmp/a/drivers/unisoc_platform/sprdwcn/sdio/sdiohal.h source/drivers/misc/sprdwcn/platform/
 
+      - name: Add UIS8581A board DTS
+        run: |
+          cp dts/uis8581a2h10.dts dts/lcd_icn6202_mipi2lvds.dtsi source/arch/arm64/boot/dts/sprd/
+          # register in dtb list right after sp9863a-2h10.dtb
+          python3 patches/register_dts.py source/arch/arm64/boot/dts/sprd/Makefile
+
       - name: Patch
         run: |
           cd source
@@ -135,6 +141,7 @@ jobs:
           name: uis8581a-build
           path: |
             source/arch/arm64/boot/Image
+            source/arch/arm64/boot/dts/sprd/uis8581a2h10.dtb
             source/arch/arm64/boot/dts/sprd/*.dtb
             source/.config
             source/drivers/**/*.ko
