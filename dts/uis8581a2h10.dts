@@ -250,6 +250,36 @@
 		compatible = "sprd,uis8581a";
 	};
 
+	/* WCN marlin3 (WiFi/BT/GNSS) — gpios per running UIS8581A2H10 devicetree */
+	sprd_marlin3: sprd-marlin3 {
+		compatible = "sprd,marlin3";
+		pwrseq_disable;
+		wcn-power-gpios = <&ap_gpio 0x52 0>;
+		wcn-power-gpios-1v2 = <&ap_gpio 0x29 0>;
+		sprd,wcn-usb-available;
+		sprd,btwf-file-name = "/dev/block/platform/soc/soc:ap-ahb/20600000.sdio/by-name/wcnmodem";
+		clock-names = "clk_32k", "source", "enable";
+		common_chip_en;
+		sprd,gnss-file-name = "/dev/block/platform/soc/soc:ap-ahb/20600000.sdio/by-name/gnssmodem";
+		adma-tx;
+		adma-rx;
+		reset-gpios = <&ap_gpio 0x8c 0>;
+		m2-to-ap-coexist-gpios = <&ap_gpio 0x77 0>;
+		post-power-on-delay-ms = <0x14>;
+		permit-ap-send-gpios = <&ap_gpio 0x35 0>;
+		enable-gpios = <&ap_gpio 0x1b 0>;
+		xtal-26m-clk-type = "TCXO";
+		m2-wakeup-ap-gpios = <&ap_gpio 0x4d 0>;
+		m2-to-ap-irq-gpios = <&ap_gpio 0x79 0>;
+		sprd,keep-power-on;
+		sdhci-name = <&sdio0>;
+		sprd,wait-ge2-disabled;
+		avdd12-supply = <&vddcon>;
+		avdd33-supply = <&vddwifipa>;
+		dvdd12-supply = <&vddcon>;
+		dcxo18-supply = <&vddkpled>;
+	};
+
 	extcon_gpio: extcon-gpio {
 		compatible = "linux,extcon-usb-gpio";
 		vbus-gpio = <&pmic_eic 0 GPIO_ACTIVE_HIGH>;
