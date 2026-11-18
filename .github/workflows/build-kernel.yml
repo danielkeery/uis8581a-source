@@ -157,4 +157,5 @@ jobs:
             source/arch/arm64/boot/dts/sprd/*.dtb
             source/.config
             source/drivers/**/*.ko
+            source/modules_recovered/**/*.ko
           retention-days: 90
