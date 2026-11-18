@@ -250,6 +250,16 @@
 		compatible = "sprd,uis8581a";
 	};
 
+	sprd-mtty {
+		compatible = "sprd,mtty";
+		sprd,name = "ttyBT";
+	};
+
+	sprd-fm {
+		compatible = "sprd,marlin3-fm";
+		sprd,name = "sprd-fm";
+	};
+
 	/* WCN marlin3 (WiFi/BT/GNSS) — gpios per running UIS8581A2H10 devicetree */
 	sprd_marlin3: sprd-marlin3 {
 		compatible = "sprd,marlin3";
@@ -488,8 +498,35 @@
 	};
 };
 
+&i2c2 {
+	status = "okay";
+	clock-frequency = <100000>;
+
+	/* ambient light / proximity / color sensors (lsec) */
+	ltr308@53 {
+		compatible = "ltr,ltr308als";
+		reg = <0x53>;
+		gpios = <&ap_gpio 0x34 0 &ap_gpio 0x9c 0 &ap_gpio 0x37 0>;
+	};
+
+	lsm6dsm@6a {
+		st,drdy-int-pin = <0x02>;
+		pwren-gpios = <&ap_gpio 0x20 0>;
+		compatible = "st,lsm6dsm";
+		reg = <0x6a>;
+		gpios = <&ap_gpio 0x7e 0>;
+	};
+
+	bh1750 {
+		compatible = "lsec,bh1750";
+		reg = <0x5c>;
+		gpios = <&ap_gpio 0x34 0 &ap_gpio 0x9c 0>;
+	};
+};
+
 &i2c3 {
 	status = "okay";
+	clock-frequency = <400000>;
 
 	adaptive-touchscreen@38 {
 		compatible = "adaptive-touchscreen";
@@ -504,11 +541,143 @@
 			a8 = /bits/ 8 <0x5a>;
 		};
 	};
+
+	/* touch controllers (lsec board variants; selected by driver at probe) */
+	sitronix@55 {
+		irq-gpio = <&ap_gpio 0x90 0>;
+		compatible = "sitronix_ts", "forcelead_ts";
+		reg = <0x55>;
+		rst-gpio = <&ap_gpio 0x91 0>;
+	};
+
+	jadard_ts@68 {
+		jadard,rst-gpio = <&ap_gpio 0x91 0>;
+		jadard,int-is-edge = <1>;
+		interrupt-parent = <&ap_gpio>;
+		jadard,panel-coords = <0 0x2d0 0 0x7d0>;
+		jadard,irq-gpio = <&ap_gpio 0x90 0>;
+		jadard,panel-sense-nums = <0x10 0x2d>;
+		compatible = "jadard,jdcommon";
+		reg = <0x68>;
+		jadard,panel-max-points = <5>;
+	};
+
+	ilitek@41 {
+		ilitek,name = "ilitek_i2c";
+		touch,irq-gpio = <&ap_gpio 0x90 0>;
+		compatible = "tchip,ilitek", "onchip,ilitek";
+		touch,reset-gpio = <&ap_gpio 0x91 0>;
+		ilitek,reset-gpio = <&ap_gpio 0x91 0>;
+		ilitek,irq-gpio = <&ap_gpio 0x90 0>;
+		reg = <0x41>;
+		gpios = <&ap_gpio 0x91 0 &ap_gpio 0x90 0>;
+	};
+
+	hy461x@38 {
+		pm,user-name = "tp";
+		qcom,ts-gpio-irq = <&ap_gpio 0x90 0>;
+		qcom,ts-gpio-reset = <&ap_gpio 0x91 0>;
+		compatible = "qcom,hy461x";
+		reg = <0x38>;
+		pm,class-name = "hy_class";
+		gpios = <&ap_gpio 0x91 0 &ap_gpio 0x90 0>;
+	};
+
+	gt9xx_ts@14 {
+		vdd_name = "vdd28";
+		TP_MAX_X = <0x1e0>;
+		virtualkeys = <0x100 0x42c 0x40 0x40 0x80 0x42c 0x40 0x40 0xc0 0x42c 0x40 0x40>;
+		compatible = "goodix,gt9xx";
+		TP_MAX_Y = <0x320>;
+		reg = <0x14>;
+		gpios = <&ap_gpio 0x91 0 &ap_gpio 0x90 0>;
+	};
+
+	chipone_ts@30 {
+		chipone,x-res = <0x258>;
+		chipone,rst-gpio = <&ap_gpio 0x91 0>;
+		chipone,y-res = <0x400>;
+		interrupt-parent = <&ap_gpio>;
+		chipone,irq-gpio = <&ap_gpio 0x90 0>;
+		compatible = "chipone-ts";
+		reg = <0x30>;
+	};
+
+	smtouch@2e {
+		chipsemi,int-gpio = <&ap_gpio 0x90 0>;
+		compatible = "chipsemi,chsc_cap_touch";
+		reg = <0x2e>;
+		chipsemi,rst-gpio = <&ap_gpio 0x91 0>;
+	};
+
+	himax_ts@48 {
+		himax,TSIX = <&ap_gpio 0x90 0>;
+		interrupt-parent = <&ap_gpio>;
+		himax,TP-EXT-RSTN = <&ap_gpio 0x91 0>;
+		himax,panel-coords = <0 0x4b0 0 0x7d0>;
+		compatible = "himax,hxcommon", "himax,hx_mt_common";
+		himax,rst-gpio = <&ap_gpio 0x91 0>;
+		reg = <0x48>;
+		report_type = <1>;
+		himax,irq-gpio = <&ap_gpio 0x90 0>;
+	};
+
+	cst1xx@1a {
+		qcom,ts-gpio-irq = <&ap_gpio 0x90 0>;
+		qcom,ts-gpio-reset = <&ap_gpio 0x91 0>;
+		compatible = "cst3xx,cst3xx_ts";
+		reg = <0x1a>;
+		gpios = <&ap_gpio 0x91 0 &ap_gpio 0x90 0>;
+	};
+
+	focaltech@40 {
+		compatible = "focaltech,fts";
+		reg = <0x40>;
+		gpios = <&ap_gpio 0x91 0 &ap_gpio 0x90 0>;
+	};
+
+	btl_adaptive@2c {
+		lsec,reset-gpio = <&ap_gpio 0x91 0>;
+		synaptics,power-delay-ms = <0xc8>;
+		synaptics,irq-gpio = <&ap_gpio 0x90 0x2008>;
+		interrupt-parent = <&ap_gpio>;
+		synaptics,reset-on-state = <0>;
+		lsec,irq-gpio = <&ap_gpio 0x90 0>;
+		compatible = "btl,btl_ts", "synaptics,tcm-i2c";
+		synaptics,reset-gpio = <&ap_gpio 0x91 0>;
+		synaptics,irq-on-state = <0>;
+		reg = <0x2c>;
+		synaptics,reset-active-ms = <0x14>;
+		gpios = <&ap_gpio 0x91 0 &ap_gpio 0x90 0>;
+		synaptics,reset-delay-ms = <0xc8>;
+	};
+
+	lsec_adaptive@78 {
+		compatible = "lsec,adaptivetch";
+		reg = <0x78>;
+		gpios = <&ap_gpio 0x91 0 &ap_gpio 0x90 0>;
+	};
 };
 
 &i2c4 {
 	status = "okay";
 	clock-frequency = <400000>;
+
+	/* FM radio (lsec) — qn8027 transmitter + nxp685x tuner */
+	qn8027@2c {
+		compatible = "lsec,qn8027";
+		status = "okay";
+		reg = <0x2c>;
+	};
+
+	nxp685x@64 {
+		pwm-names = "lsecpwm";
+		compatible = "nxp,nxp685x";
+		status = "okay";
+		reg = <0x64>;
+		pwms = <&pwms 2 0xfa>;
+		gpios = <&ap_gpio 0x08 0 &ap_gpio 0x00 0 &ap_gpio 0x18 0>;
+	};
 
 	fan54015_chg: charger@6a {
 		compatible = "fairchild,fan54015_chg";
