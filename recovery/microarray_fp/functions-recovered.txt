@@ -1,0 +1,29 @@
+### defined functions
+File /work/users/sharebsp/workdir/used8581/bsp/modules/input/fingerprint/microarray/madev_tee.c:
+317:	int mas_mmap(struct file *, struct vm_area_struct *);
+479:	int mas_plat_probe(struct platform_device *);
+531:	int mas_plat_remove(struct platform_device *);
+424:	static int deinit_vars(void);
+306:	static long mas_compat_ioctl(struct file *, unsigned int, unsigned long);
+554:	static void mas_exit(void);
+442:	static int mas_fb_notifier_callback(struct notifier_block *, unsigned long, void *);
+540:	static int mas_init(void);
+54:	static irqreturn_t mas_interrupt(int, void *);
+104:	static long mas_ioctl(struct file *, unsigned int, unsigned long);
+47:	static void mas_work(struct work_struct *);
+File /work/users/sharebsp/workdir/used8581/bsp/modules/input/fingerprint/microarray/x86-settings.c:
+51:	void ma_spi_change(struct spi_device *, unsigned int, int);
+117:	void mas_disable_spi_clock(struct spi_device *);
+112:	void mas_enable_spi_clock(struct spi_device *);
+73:	int mas_finger_get_gpio_info(struct platform_device *);
+101:	int mas_finger_set_eint(int);
+107:	int mas_finger_set_gpio_info(int);
+86:	int mas_finger_set_power(int);
+81:	int mas_finger_set_spi(int);
+155:	int mas_get_interrupt_gpio(unsigned int);
+122:	unsigned int mas_get_irq(struct platform_device *);
+56:	int mas_get_platform(void);
+68:	int mas_remove_platform(void);
+42:	void mas_select_transfer(struct spi_device *, int);
+164:	int mas_set_enable_gpio(struct platform_device *);
+96:	int mas_switch_power(unsigned int);
